@@ -1,9 +1,9 @@
-cat <<EOF > pyproject.toml
 [tool.poetry]
 name = "py-fastapi-online-cinema"
 version = "0.1.0"
 description = "Online Cinema API with FastAPI"
 authors = ["Your Name <you@example.com>"]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -17,6 +17,7 @@ passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 python-multipart = "^0.0.6"
 celery = "^5.3.0"
 redis = "^5.0.0"
+psycopg2-binary = "^2.9.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
