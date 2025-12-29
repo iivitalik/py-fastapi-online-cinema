@@ -55,3 +55,19 @@ class MovieDetail(MovieList):
     certification: GenreBase
     stars: List[GenreBase]
     directors: List[GenreBase]
+
+class CommentBase(BaseModel):
+    text: str
+    parent_id: Optional[int] = None
+
+class CommentCreate(CommentBase):
+    pass
+
+class CommentOut(CommentBase):
+    id: int
+    user_id: int
+    movie_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
