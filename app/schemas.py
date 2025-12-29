@@ -2,6 +2,9 @@ from pydantic import BaseModel, EmailStr, Field, validator
 from typing import Optional
 from datetime import datetime
 import re
+from pydantic import BaseModel
+from typing import List, Optional
+from decimal import Decimal
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -25,3 +28,30 @@ class Token(BaseModel):
 class PasswordChange(BaseModel):
     old_password: str
     new_password: str = Field(..., min_length=8)
+
+class GenreBase(BaseModel):
+    id: int
+    name: str
+    class Config:
+        from_attributes = True
+
+class MovieList(BaseModel):
+    id: int
+    uuid: str
+    name: str
+    year: int
+    imdb: float
+    price: Decimal
+    genres: List[GenreBase]
+    class Config:
+        from_attributes = True
+
+class MovieDetail(MovieList):
+    description: str
+    time: int
+    votes: int
+    meta_score: Optional[float]
+    gross: Optional[float]
+    certification: GenreBase
+    stars: List[GenreBase]
+    directors: List[GenreBase]
