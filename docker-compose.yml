@@ -1,11 +1,9 @@
-cat <<EOF > docker-compose.yml
 version: '3.8'
 
 services:
   db:
     image: postgres:15-alpine
     container_name: cinema_db
-    restart: always
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
@@ -18,9 +16,44 @@ services:
   redis:
     image: redis:7-alpine
     container_name: cinema_redis
+
+  minio:
+    image: minio/minio
+    container_name: cinema_minio
     ports:
-      - "6379:6379"
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+
+  app:
+    build: .
+    container_name: cinema_app
+    depends_on:
+      - db
+      - redis
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+
+  celery_worker:
+    build: .
+    container_name: cinema_worker
+    command: celery -A app.worker worker --loglevel=info
+    depends_on:
+      - db
+      - redis
+
+  celery_beat:
+    build: .
+    container_name: cinema_beat
+    command: celery -A app.worker beat --loglevel=info
+    depends_on:
+      - db
+      - redis
 
 volumes:
   postgres_data:
-EOF
