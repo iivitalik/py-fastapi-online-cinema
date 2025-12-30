@@ -1,10 +1,8 @@
 from pydantic import BaseModel, EmailStr, Field, validator
-from typing import Optional
-from datetime import datetime
-import re
-from pydantic import BaseModel
 from typing import List, Optional
+from datetime import datetime
 from decimal import Decimal
+import re
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -22,8 +20,11 @@ class UserCreate(BaseModel):
 
 class Token(BaseModel):
     access_token: str
-    refresh_token: str
+    refresh_token: Optional[str] = None
     token_type: str
+
+class TokenData(BaseModel):
+    user_id: Optional[int] = None
 
 class PasswordChange(BaseModel):
     old_password: str
@@ -56,6 +57,19 @@ class MovieDetail(MovieList):
     stars: List[GenreBase]
     directors: List[GenreBase]
 
+class MovieBase(BaseModel):
+    name: str
+    year: int
+    time: int
+    imdb: float
+    votes: int
+    description: str
+    price: Decimal
+    certification_id: int
+
+class MovieCreate(MovieBase):
+    pass
+
 class CommentBase(BaseModel):
     text: str
     parent_id: Optional[int] = None
@@ -68,6 +82,17 @@ class CommentOut(CommentBase):
     user_id: int
     movie_id: int
     created_at: datetime
+    class Config:
+        from_attributes = True
 
+class CartItem(BaseModel):
+    movie_id: int
+    movie_title: str
+    class Config:
+        from_attributes = True
+
+class CartOut(BaseModel):
+    items: List[CartItem]
+    total_count: int
     class Config:
         from_attributes = True

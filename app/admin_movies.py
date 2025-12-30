@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from . import models, schemas, database, oauth2
+from . import models, schemas, database, auth
 
 router = APIRouter(prefix="/admin/movies", tags=["admin-movies"])
 
@@ -9,7 +9,7 @@ router = APIRouter(prefix="/admin/movies", tags=["admin-movies"])
 def create_movie(
         movie_in: schemas.MovieCreate,
         db: Session = Depends(database.get_db),
-        current_user: models.User = Depends(oauth2.get_current_moderator)
+        current_user: models.User = Depends(auth.get_current_moderator)
 ):
     new_movie = models.Movie(**movie_in.dict(exclude={"genre_ids", "star_ids", "director_ids"}))
 
@@ -30,7 +30,7 @@ def create_movie(
 def delete_movie(
         movie_id: int,
         db: Session = Depends(database.get_db),
-        current_user: models.User = Depends(oauth2.get_current_moderator)
+        current_user: models.User = Depends(auth.get_current_moderator)
 ):
     movie = db.query(models.Movie).filter(models.Movie.id == movie_id).first()
     if not movie:

@@ -2,11 +2,11 @@ import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Enum, Text, Numeric, Table, \
-    UniqueConstraint, Float
+    UniqueConstraint, Float, func
 from sqlalchemy.orm import relationship, backref, declarative_base
 from sqlalchemy.dialects.postgresql import UUID
+from app.database import Base
 
-Base = declarative_base()
 
 class UserGroupEnum(PyEnum):
     USER = "USER"
@@ -23,6 +23,7 @@ class UserGroup(Base):
     name = Column(Enum(UserGroupEnum), unique=True, nullable=False)
     users = relationship("User", back_populates="group")
 
+
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
@@ -31,9 +32,11 @@ class User(Base):
     is_active = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    group_id = Column(Integer, ForeignKey("user_groups.id"), nullable=False)
 
+    group_id = Column(Integer, ForeignKey("user_groups.id"), nullable=False)
     group = relationship("UserGroup", back_populates="users")
+
+    cart = relationship("Cart", back_populates="user", uselist=False)
     profile = relationship("UserProfile", back_populates="user", uselist=False)
     activation_token = relationship("ActivationToken", back_populates="user", uselist=False)
     reset_token = relationship("PasswordResetToken", back_populates="user", uselist=False)
@@ -172,3 +175,32 @@ class FavoriteMovie(Base):
     __tablename__ = "favorite_movies"
     user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
     movie_id = Column(Integer, ForeignKey("movies.id"), primary_key=True)
+
+
+class Cart(Base):
+    __tablename__ = "carts"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+
+    user = relationship("User", back_populates="cart")
+    items = relationship("CartItem", back_populates="cart", cascade="all, delete-orphan")
+
+
+class CartItem(Base):
+    __tablename__ = "cart_items"
+    id = Column(Integer, primary_key=True, index=True)
+    cart_id = Column(Integer, ForeignKey("carts.id"), nullable=False)
+    movie_id = Column(Integer, ForeignKey("movies.id"), nullable=False)
+    added_at = Column(DateTime, server_default=func.now(), nullable=False)
+
+    cart = relationship("Cart", back_populates="items")
+    movie = relationship("Movie")
+
+    __table_args__ = (UniqueConstraint("cart_id", "movie_id", name="unique_cart_movie"),)
+
+
+class PurchasedMovie(Base):
+    __tablename__ = "purchased_movies"
+    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    movie_id = Column(Integer, ForeignKey("movies.id"), primary_key=True)
+    purchased_at = Column(DateTime, server_default=func.now())

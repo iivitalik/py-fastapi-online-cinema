@@ -1,58 +1,54 @@
-version: '3.8'
-
 services:
   db:
-    image: postgres:15-alpine
-    container_name: cinema_db
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: cinema_db
-    ports:
-      - "5432:5432"
+    image: postgres:15
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=cinema_db
 
   redis:
     image: redis:7-alpine
-    container_name: cinema_redis
 
-  minio:
-    image: minio/minio
-    container_name: cinema_minio
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    command: server /data --console-address ":9001"
-
-  app:
+  web:
     build: .
-    container_name: cinema_app
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/cinema_db
     depends_on:
       - db
       - redis
-    env_file:
-      - .env
-    ports:
-      - "8000:8000"
 
   celery_worker:
     build: .
-    container_name: cinema_worker
-    command: celery -A app.worker worker --loglevel=info
+    command: celery -A app.worker.celery_app worker --loglevel=info
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/cinema_db
     depends_on:
       - db
       - redis
 
   celery_beat:
     build: .
-    container_name: cinema_beat
-    command: celery -A app.worker beat --loglevel=info
+    command: celery -A app.worker.celery_app beat --loglevel=info
+    volumes:
+      - .:/app
     depends_on:
-      - db
+      - redis
+
+  flower:
+    image: mher/flower
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    ports:
+      - "5555:5555"
+    depends_on:
       - redis
 
 volumes:
