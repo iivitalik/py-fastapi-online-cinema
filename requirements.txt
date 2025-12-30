@@ -10,3 +10,5 @@ redis
 celery
 bcrypt==4.0.1
 passlib[bcrypt]
+pytest==7.4.3
+httpx==0.25.1

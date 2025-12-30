@@ -23,14 +23,17 @@ def register(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
     new_user = models.User(
         email=user_data.email,
         hashed_password=hashed_pwd,
-        group_id=1
+        group_id=1,
+        is_active=False
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
-    token_str = utils.generate_activation_token(new_user.id)
+    new_cart = models.Cart(user_id=new_user.id)
+    db.add(new_cart)
 
+    token_str = utils.generate_activation_token(new_user.id)
     db_token = models.ActivationToken(
         user_id=new_user.id,
         token=token_str,
@@ -41,7 +44,25 @@ def register(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
 
     utils.send_activation_email(new_user.email, token_str)
 
-    return {"message": "User created. Check your email for activation link."}
+    return {"message": "User created. Check logs for activation link."}
+
+
+@router.get("/activate/{token}")
+def activate_user(token: str, db: Session = Depends(get_db)):
+    db_token = db.query(models.ActivationToken).filter(models.ActivationToken.token == token).first()
+
+    if not db_token or db_token.expires_at < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+    user = db.query(models.User).filter(models.User.id == db_token.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.is_active = True
+    db.delete(db_token)
+    db.commit()
+
+    return {"message": "Account activated successfully"}
 
 
 @router.post("/login", response_model=schemas.Token)
@@ -53,6 +74,9 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Account not activated")
 
     access_token = utils.create_access_token(data={"user_id": user.id})
     return {"access_token": access_token, "token_type": "bearer"}
