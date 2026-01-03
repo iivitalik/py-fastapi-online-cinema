@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from typing import List, Optional
-from . import models, schemas, database, auth
+from app import models, schemas, database
+from app.routers import auth
 
 router = APIRouter(prefix="/movies", tags=["movies"])
 

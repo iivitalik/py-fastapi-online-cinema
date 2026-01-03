@@ -3,9 +3,10 @@ from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
-from . import models, schemas, utils
-from .database import get_db
-from .models import UserGroupEnum
+from app import models, schemas
+from app.utils import auth_utils
+from app.database import get_db
+from app.models import UserGroupEnum
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
