@@ -11,4 +11,5 @@ dist/
 build/
 .pytest_cache/
 .docker-volumes/
-EOF
+EOF".idea/"
+.idea
